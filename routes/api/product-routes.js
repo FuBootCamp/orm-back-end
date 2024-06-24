@@ -36,7 +36,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // create new product
-router.post('/', (req, res) => {
+router.post('/',(req, res) => {
   /* req.body should look like this...
     {
       product_name: "Basketball",
@@ -48,7 +48,10 @@ router.post('/', (req, res) => {
   Product.create(req.body)
     .then((product) => {
       // if there's product tags, we need to create pairings to bulk create in the ProductTag model
+      console.log(req.body.tagIds);
+      console.log(Array.isArray(req.body.tagIds));
       if (req.body.tagIds.length) {
+        console.log(req.body.tagIds.length)
         const productTagIdArr = req.body.tagIds.map((tag_id) => {
           return {
             product_id: product.id,
@@ -67,6 +70,7 @@ router.post('/', (req, res) => {
     });
 });
 
+
 // update product
 router.put('/:id', (req, res) => {
   // update product data
@@ -82,6 +86,8 @@ router.put('/:id', (req, res) => {
           where: { product_id: req.params.id }
         }).then((productTags) => {
           // create filtered list of new tag_ids
+          console.log(Array.isArray(req.body.tagIds));
+          console.log(req.body.tagIds);
           const productTagIds = productTags.map(({ tag_id }) => tag_id);
           const newProductTags = req.body.tagIds
           .filter((tag_id) => !productTagIds.includes(tag_id))
@@ -112,8 +118,24 @@ router.put('/:id', (req, res) => {
     });
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   // delete one product by its `id` value
+  try {
+    const productData = await Product.destroy({
+      where: {
+        id: req.params.id
+      }
+    });
+
+    if (!productData) {
+      res.status(404).json({ message: 'No product found with this id!' });
+      return;
+    }
+
+    res.status(200).json(productData);
+  } catch (err) {
+    res.status(500).json(err);
+  }
 });
 
 module.exports = router;
